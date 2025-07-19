@@ -1,16 +1,8 @@
 import { useState } from "react";
 
 function safeEval(expr) {
-  // Only allow numbers, operators, and decimal points
   if (!/^[-+*/().\d\s]+$/.test(expr)) return "Error";
   try {
-    // eslint-disable-next-line no-new-func
-    // Use Function constructor for safer evaluation
-    // Still not perfect, but avoids direct eval
-    // For production, use a math parser library
-    // e.g. mathjs
-    // This is for basic arithmetic only
-    // Remove spaces to avoid issues
     const fn = new Function(`return (${expr.replace(/\s+/g,"")})`);
     return fn().toString();
   } catch {
@@ -18,54 +10,75 @@ function safeEval(expr) {
   }
 }
 
+const numpad = [
+  ["7", "8", "9"],
+  ["4", "5", "6"],
+  ["1", "2", "3"],
+  ["0", ".", "C"]
+];
+const operations = ["/", "*", "-", "+", "="];
+
+const colors = {
+  operator: "bg-blue-500 hover:bg-blue-600 text-white",
+  function: "bg-gray-300 hover:bg-gray-400 text-gray-700",
+  number: "bg-teal-200 hover:bg-teal-300 text-gray-900",
+};
+
 export default function Calculator() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState("");
 
   const handleClick = (value) => {
-    setInput((prev) => prev + value);
-  };
-
-  const handleClear = () => {
-    setInput("");
-    setResult("");
-  };
-
-  const handleCalculate = () => {
-    setResult(safeEval(input));
+    if (!value) return;
+    if (value === "C") {
+      setInput("");
+      setResult("");
+    } else if (value === "=") {
+      setResult(safeEval(input));
+    } else {
+      setInput((prev) => prev + value);
+    }
   };
 
   return (
-    <div className="max-w-xs mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg flex flex-col items-center">
+    <div className="w-full max-w-md mx-auto mt-10 p-6 bg-gradient-to-br from-white to-gray-100 rounded-2xl shadow-2xl flex flex-col items-center">
       <div className="w-full mb-4">
         <input
           type="text"
           value={input}
           readOnly
-          className="w-full text-right text-2xl p-2 border rounded mb-2 bg-gray-50"
+          className="w-full text-right text-3xl p-3 rounded bg-gray-50 border border-gray-300 mb-2"
         />
-        <div className="text-right text-lg text-gray-500">{result}</div>
+        <div className="text-right text-xl text-gray-500 min-h-[2rem]">{result}</div>
       </div>
-      <div className="grid grid-cols-4 gap-2 w-full mb-2">
-        {["7","8","9","/","4","5","6","*","1","2","3","-","0",".","=","+"]
-          .map((btn) => (
+      <div className="flex w-full">
+        <div className="grid grid-cols-3 gap-3 flex-1">
+          {numpad.flat().map((btn, idx) => {
+            let style = colors.number;
+            if (btn === "C") style = colors.function;
+            return (
+              <button
+                key={btn + idx}
+                className={`${style} rounded-full p-4 text-2xl font-semibold transition-colors duration-150`}
+                onClick={() => handleClick(btn)}
+              >
+                {btn}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-col gap-3 ml-3">
+          {operations.map((op, idx) => (
             <button
-              key={btn}
-              className="bg-blue-500 text-white rounded p-3 text-xl hover:bg-blue-600 transition"
-              onClick={() =>
-                btn === "=" ? handleCalculate() : handleClick(btn)
-              }
+              key={op + idx}
+              className={`${colors.operator} rounded-full p-4 text-2xl font-semibold transition-colors duration-150`}
+              onClick={() => handleClick(op)}
             >
-              {btn}
+              {op}
             </button>
           ))}
+        </div>
       </div>
-      <button
-        className="bg-red-500 text-white rounded p-2 w-full text-lg hover:bg-red-600 transition"
-        onClick={handleClear}
-      >
-        Clear
-      </button>
     </div>
   );
 }
